@@ -1,4 +1,6 @@
 tensorflow
 streamlit
+supabase
 pandas
 numpy
+matplotlib
