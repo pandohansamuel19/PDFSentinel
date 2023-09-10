@@ -1,7 +1,15 @@
+import streamlit
 from streamlit import secrets
 from abc import ABC, abstractmethod
 from typing import List, Protocol
 from supabase import Client, create_client
+from supabase import (
+    StorageException,
+    SupabaseAuthClient,
+    SupabaseRealtimeClient,
+    SupabaseStorageClient
+)
+
 
 class SupabaseConnection(ABC):
     def __init__(self):
@@ -29,4 +37,20 @@ class SupabaseConnection(ABC):
     @abstractmethod
     def initialize_DB(self) -> None:
         # TODO: if connect intialize to existing DB
+        ...
+
+class UserDB(SupabaseConnection):
+    def __init__(self):
+        super(UserDB, self).__init__()
+        
+    def get_unique_model(self):
+        ...
+        
+    def delete_unique_model(self):
+        ...
+        
+    def download_data(self):
+        ...
+        
+    def upload_unique_data(self):
         ...
