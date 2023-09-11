@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 import tensorflow as tf
+from tensorflow.python.keras.utils.vis_utils import plot_model
+
+from .data_tranformations import MalwarePDFDataset
 
 
 def positional_encoding(length, depth):
@@ -344,8 +347,25 @@ class Transformer(tf.keras.Model):
         # Return the final output and the attention weights.
         return logits
     
+# @dataclass
+# class Model_Architecture_List:
+#     positional_embedding = PositionalEmbedding()
+#     base_attention = BaseAttention()
+#     cross_attention = CrossAttention()
+#     global_self_attention = GlobalSelfAttention()
+#     causal_self_attention = CausalSelfAttention()
+#     feed_forward = FeedForward()
+#     encoder_layer = EncoderLayer()
+#     encoder = Encoder()
+#     decoder_layer = DecoderLayer
+#     decoder = Decoder()
+#     transformers = Transformer()
+    
+def visualize_model_architecture(chosen_model):
+    ...
+    
 def call_transformers() -> None:
     ...
     
-if __name__ == "__main__":
-    ...
+# if __name__ == "__main__":
+#     ...

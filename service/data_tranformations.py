@@ -7,6 +7,7 @@ import shutil
 import csv
 from typing import List
 from pathlib import Path
+import glob
 
 HEADER = ['id', 'label', 'name','contents']
 ID = 0
@@ -17,139 +18,202 @@ class MalwarePDFDataset:
         super(MalwarePDFDataset, self).__init__()
         
 
-    def extract_tar_file(self, file_name: str):
-        """Extract the .tar.gz and remove it after
+def extract_tar_file(folder_name: str):
+    """Extract the .tar.gz and remove it after
 
-        Parameters
-        ----------
-        file_name : str
-            The .tar.gz file source path
-        """
-        FILE_PATH = Path("data/")
-        file = tarfile.open(FILE_PATH / f'{file_name}.tar.gz')
-        file.extractall(FILE_PATH / f'{file_name}')
+    Parameters
+    ----------
+    folder_name : str
+        The .tar.gz file source path (without extension)
+    """
+    SOURCE_PATH = Path("../source")
+    os.makedirs(SOURCE_PATH, exist_ok=True)
+    file_path = SOURCE_PATH / f'{folder_name}.tar.gz'
+
+    if not file_path.exists():
+        return f"File not found: {file_path}"
+    try:
+        file = tarfile.open(file_path)
+        file.extractall(SOURCE_PATH)
         file.close()
-        os.remove(FILE_PATH / f'{file_name}.tar.gz')
+        os.remove(file_path)
+        
+        extracted_path = os.listdir(SOURCE_PATH / folder_name)
+        
+        index = 1
+        for filename in extracted_path:
+            old_path = SOURCE_PATH / folder_name / filename
+            new_path = SOURCE_PATH / folder_name / f"{folder_name}_{index}.zip"
+            os.rename(old_path, new_path)
+            index += 1
+        return "Extraction completed successfully"
+    
+    except Exception as e:
+        return f"An error occurred: {str(e)}"     
+    
 
-    def zip_extract(self, folder_path: Path):
-        """Extract the zip file in one time
+def zip_extract(folder_path: str):
+    """Extract the zip file in one time and Delete the files afterwards
 
-        Parameters
-        ----------
-        folder_path : Path
-            The target folder path
+    Parameters
+    ----------
+    folder_path : str
+        The target folder path
 
-        Returns
-        -------
-        int
-            Completing the extractions and return the sum of files in the folder
-        """
-        index += 1
-        # TODO: Extract the Benign PDF files
-        for filename in os.listdir(folder_path):
-            if filename.endswith(".zip"):
-                zip_file_path = folder_path / filename  # Full path to the ZIP file
-                # TODO: Splitting the zip file name with its extensions as folder name
-                benign_folder = os.path.splitext(os.path.basename(filename))[0] + index
-                if not os.path.isdir(benign_folder):
-                    try:
-                        # TODO: Extract all the pdf files and move to initialized folder
-                        zip = zipfile.ZipFile(zip_file_path, 'r')
-                        os.mkdir(benign_folder)
+    Returns
+    -------
+    str
+        Completing the extractions and return a message
+    """
+    # Create the target folder if it doesn't exist
+    SOURCE_PATH = Path(f"../source/{folder_path}")
+    
+    if not SOURCE_PATH.is_dir():
+        SOURCE_PATH.mkdir(parents=True)
+
+    # TODO: Extract the Benign PDF files
+    for filename in os.listdir(SOURCE_PATH):
+        if filename.endswith(".zip"):
+            zip_file_path = SOURCE_PATH / filename  # Full path to the ZIP file
+            # TODO: Splitting the zip file name with its extensions as folder name
+            benign_folder = SOURCE_PATH / os.path.splitext(os.path.basename(filename))[0]
+            if not benign_folder.is_dir():
+                try:
+                    # TODO: Extract all the pdf files and move to initialized folder
+                    with zipfile.ZipFile(zip_file_path, 'r') as zip:
                         zip.extractall(path=benign_folder)
-                    # Handle bad zip files
-                    except zipfile.BadZipfile as e:
-                        print("BAD ZIP: " + str(zip_file_path))
-                        try:
-                            os.remove(zip_file_path)
-                        except OSError as e:
-                            if e.errno != errno.ENOENT:
-                                raise
-        index += 1
-        return len(os.listdir(folder_path))
-        
-    
-    def spliting_data(self, source: Path, destination: Path, train_split: int) -> None:
-        """Manually spliting the data to training and testing folders
-
-        Parameters
-        ----------
-        source : Path
-            The base pdf folder target
-        destination : Path
-            The randomize pdf file spread to specific folder
-        train_split : int
-            The train split percentage
-        """
-        for file_name in random.sample(os.listdir(source), train_split):
-            shutil.move(os.path.join(source, file_name), destination)
-
-        for file in os.listdir(source):
-            os.rename(os.path.join(source, file), os.path.join(destination, file))
-
-        return "Splitting and Renaming from {} to {} are completed".format(
-            source, destination
-        )
-        
-    def get_file_byte_string(self, file):
-        """Converting PDF file to byte stream. Performing encoding with One Hot Encoding and n-grams.
-
-        Parameters
-        ----------
-        file : _type_
-            _description_
-
-        Returns
-        -------
-        bytes
-            Resulting 
-        """
-        curr_file = open(file, "rb")
-        data = curr_file.read()
-        data_str = str(data)
-        data_delim = ' '.join(data_str[i:i+4] for i in range(0, len(data_str), 4))
-        data_bytes = bytes(data_delim, 'utf-8')
-        curr_file.close()
-        return data_bytes
+                    
+                    # Delete the zip file after extraction
+                    os.remove(zip_file_path)
                 
-    def create_row(self, filetype, file, writer):
-        """Generate the da
-
-        Parameters
-        ----------
-        filetype : _type_
-            _description_
-        file : _type_
-            _description_
-        writer : _type_
-            _description_
-        """
-        global ID
-        file_data = []
-        file_data.append(id)
-        file_data.append(filetype)
-        file_data.append(os.path.basename(os.path.normpath(file)))
-        bytecode = self.get_file_byte_string(file)
-        file_data.append(bytecode)
-        writer.writerow(file_data)
-        file_data.clear()
-        ID += 1
+                # Handle bad zip files
+                except zipfile.BadZipfile as e:
+                    print("BAD ZIP: " + str(zip_file_path))
+                    try:
+                        os.remove(zip_file_path)
+                    except OSError as e:
+                        if e.errno != errno.ENOENT:
+                            raise
+    return "The {} zip files successfully extracted. The length of directories: {}".format(
+        SOURCE_PATH,
+        len(os.listdir(SOURCE_PATH))
+    )
         
     
-    def csv_generator(self, file_name: str) -> None:
-        """Generate csv files for containing PDF fileto Byte Stream data
-        """
-        with open('testing.csv', 'a+') as testing_csv:
-            writer = csv.writer(testing_csv)
-            writer.writerow(HEADER)
-            #benign first
-            for benign_file in os.listdir(os.path.join('Testing', 'Benign')):
-                #put all this into "do_list_creation(filetype, file) function"
-                self.create_row(0, os.path.join('Testing', 'Benign', benign_file), writer)
-            #now malicious
-            for malicious_file in os.listdir(os.path.join('Testing', 'Malicious')):
-                self.create_row(1, os.path.join('Testing', 'Malicious', malicious_file), writer)
+def spliting_data(source_folder, split_ratio=0.8):
+    DATA_PATH = Path("../data")
+    if not os.path.exists(DATA_PATH):
+        os.mkdir(DATA_PATH)
+    
+    DEST_PATH = Path(f"../data/{source_folder}")
+    SOURCE_PATH = Path(f"../source/{source_folder}")
+
+    train_dir = DEST_PATH / 'train'
+    test_dir = DEST_PATH / 'test'
+    
+    os.makedirs(train_dir, exist_ok=True)  # Create train_dir if it doesn't exist
+    os.makedirs(test_dir, exist_ok=True)   # Create test_dir if it doesn't exist
+        
+    for folder in os.listdir(SOURCE_PATH):
+        folder_path = os.path.join(SOURCE_PATH, folder)  # Full path to the subfolder
+
+        # Check if it's a directory
+        if os.path.isdir(folder_path):
+            # Get the list of files in the folder
+            files = os.listdir(folder_path)
+
+            # Split the files into train and test sets
+            train_files = files[:int(len(files) * split_ratio)]
+            test_files = files[int(len(files) * split_ratio):]
+
+            # Copy the train files to the train directory
+            for file in train_files:
+                src_file_path = os.path.join(folder_path, file)
+                dst_file_path = os.path.join(train_dir, file)
+                shutil.copy(src_file_path, dst_file_path)
+
+            # Copy the test files to the test directory
+            for file in test_files:
+                src_file_path = os.path.join(folder_path, file)
+                dst_file_path = os.path.join(test_dir, file)
+                shutil.copy(src_file_path, dst_file_path)
+            
+    shutil.rmtree(SOURCE_PATH)  # Remove the source folder after splitting
+    
+    return "Splitting is completed"
+
+        
+def get_file_byte_string(file):
+    """Converting PDF file to byte stream. Performing encoding with One Hot Encoding and n-grams.
+
+    Parameters
+    ----------
+    file : _type_
+        _description_
+
+    Returns
+    -------
+    bytes
+        Resulting 
+    """
+    curr_file = open(file, "rb")
+    data = curr_file.read()
+    data_str = str(data)
+    data_delim = ' '.join(data_str[i:i+4] for i in range(0, len(data_str), 4))
+    data_bytes = bytes(data_delim, 'utf-8')
+    curr_file.close()
+    return data_bytes
+                
+def create_row(filetype, file, writer):
+    """Generate the da
+
+    Parameters
+    ----------
+    filetype : _type_
+        _description_
+    file : _type_
+        _description_
+    writer : _type_
+        _description_
+    """
+    global ID
+    file_data = []
+    file_data.append(id)
+    file_data.append(filetype)
+    file_data.append(os.path.basename(os.path.normpath(file)))
+    bytecode = get_file_byte_string(file)
+    file_data.append(bytecode)
+    writer.writerow(file_data)
+    file_data.clear()
+    ID += 1
+        
+    
+def csv_generator(file_name: str) -> None:
+    """Generate csv files for containing PDF fileto Byte Stream data
+    """
+    with open('testing.csv', 'a+') as testing_csv:
+        writer = csv.writer(testing_csv)
+        writer.writerow(HEADER)
+        #benign first
+        for benign_file in os.listdir(os.path.join('Testing', 'Benign')):
+            #put all this into "do_list_creation(filetype, file) function"
+            create_row(0, os.path.join('Testing', 'Benign', benign_file), writer)
+        #now malicious
+        for malicious_file in os.listdir(os.path.join('Testing', 'Malicious')):
+            create_row(1, os.path.join('Testing', 'Malicious', malicious_file), writer)
     
     
 if __name__ == "__main__":
-    ...
+    # print(os.getcwd())
+    BENIGN: str = "Benign"
+    MALICIOUS: str = "Malicious"
+    
+    benign_extract = extract_tar_file(MALICIOUS)
+    print(benign_extract)
+    # # malicious_extract = extract_tar_file(MALICIOUS)
+    
+    benign_zip_extract = zip_extract(MALICIOUS)
+    print(benign_zip_extract)
+    
+    split_benign = spliting_data(source_folder = MALICIOUS, split_ratio=0.8)
+    print(split_benign)
