@@ -1,3 +1,4 @@
+from __future__ import annotations, print_function
 from pathlib import Path
 from typing import List, Self
 from dataclasses import dataclass
@@ -7,21 +8,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 import tensorflow as tf
 
-class CustomDataPreparations:
-    def __init__(self, data: DataFrame | Series, is_generate: bool) -> None:
-        super(CustomDataPreparations, self).__init__()
-        self.data = data
-        self.is_generate = is_generate
-        
-    def __initial_data(self) -> DataFrame:
-        PATH = Path.absolute() + "data/"
-        df = pd.read_csv()
-        
-        return df
-    
-    def header_to_class(self) -> None:
-        return self.data
-    
+
 def positional_encoding(length, depth):
     """Formulate the positional encoding
 
@@ -356,3 +343,9 @@ class Transformer(tf.keras.Model):
 
         # Return the final output and the attention weights.
         return logits
+    
+def call_transformers() -> None:
+    ...
+    
+if __name__ == "__main__":
+    ...

@@ -1,3 +1,4 @@
+from __future__ import annotations, print_function
 import streamlit
 from streamlit import secrets
 from abc import ABC, abstractmethod
