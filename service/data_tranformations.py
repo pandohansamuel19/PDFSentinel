@@ -26,8 +26,9 @@ def extract_tar_file(folder_name: str):
     folder_name : str
         The .tar.gz file source path (without extension)
     """
+    
     SOURCE_PATH = Path("../source")
-    os.makedirs(SOURCE_PATH, exist_ok=True)
+    # os.makedirs(SOURCE_PATH, exist_ok=True)
     file_path = SOURCE_PATH / f'{folder_name}.tar.gz'
 
     if not file_path.exists():
@@ -46,7 +47,7 @@ def extract_tar_file(folder_name: str):
             new_path = SOURCE_PATH / folder_name / f"{folder_name}_{index}.zip"
             os.rename(old_path, new_path)
             index += 1
-        return "Extraction completed successfully"
+        return f"Extraction {folder_name}.tar.gz completed successfully"
     
     except Exception as e:
         return f"An error occurred: {str(e)}"     
@@ -65,23 +66,24 @@ def zip_extract(folder_path: str):
     str
         Completing the extractions and return a message
     """
+    
     # Create the target folder if it doesn't exist
     SOURCE_PATH = Path(f"../source/{folder_path}")
     
     if not SOURCE_PATH.is_dir():
-        SOURCE_PATH.mkdir(parents=True)
+        os.mkdir(SOURCE_PATH)
 
     # TODO: Extract the Benign PDF files
     for filename in os.listdir(SOURCE_PATH):
         if filename.endswith(".zip"):
             zip_file_path = SOURCE_PATH / filename  # Full path to the ZIP file
             # TODO: Splitting the zip file name with its extensions as folder name
-            benign_folder = SOURCE_PATH / os.path.splitext(os.path.basename(filename))[0]
-            if not benign_folder.is_dir():
+            sub_folder = SOURCE_PATH / os.path.splitext(os.path.basename(filename))[0]
+            if not sub_folder.is_dir():
                 try:
                     # TODO: Extract all the pdf files and move to initialized folder
                     with zipfile.ZipFile(zip_file_path, 'r') as zip:
-                        zip.extractall(path=benign_folder)
+                        zip.extractall(path=sub_folder)
                     
                     # Delete the zip file after extraction
                     os.remove(zip_file_path)
@@ -94,16 +96,28 @@ def zip_extract(folder_path: str):
                     except OSError as e:
                         if e.errno != errno.ENOENT:
                             raise
-    return "The {} zip files successfully extracted. The length of directories: {}".format(
-        SOURCE_PATH,
-        len(os.listdir(SOURCE_PATH))
-    )
+    
+    length_dir = len(os.listdir(SOURCE_PATH))                    
+    message = f"The {SOURCE_PATH} zip files successfully extracted. The length of directories: {length_dir}"
+    
+    return SOURCE_PATH, length_dir, message
         
     
 def spliting_data(source_folder, split_ratio=0.8):
-    DATA_PATH = Path("../data")
-    if not os.path.exists(DATA_PATH):
-        os.mkdir(DATA_PATH)
+    """_summary_
+
+    Parameters
+    ----------
+    source_folder : _type_
+        _description_
+    split_ratio : float, optional
+        _description_, by default 0.8
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
     
     DEST_PATH = Path(f"../data/{source_folder}")
     SOURCE_PATH = Path(f"../source/{source_folder}")
@@ -140,7 +154,7 @@ def spliting_data(source_folder, split_ratio=0.8):
             
     shutil.rmtree(SOURCE_PATH)  # Remove the source folder after splitting
     
-    return "Splitting is completed"
+    return f"Splitting {source_folder} is completed"
 
         
 def get_file_byte_string(file):
@@ -189,8 +203,22 @@ def create_row(filetype, file, writer):
         
     
 def csv_generator(file_name: str) -> None:
-    """Generate csv files for containing PDF fileto Byte Stream data
+    """_summary_
+
+    Parameters
+    ----------
+    file_name : str
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
     """
+    
+    # Specify the column name
+    HEADER = ['id', 'label', 'name','contents']
+    
     with open('testing.csv', 'a+') as testing_csv:
         writer = csv.writer(testing_csv)
         writer.writerow(HEADER)
@@ -201,19 +229,41 @@ def csv_generator(file_name: str) -> None:
         #now malicious
         for malicious_file in os.listdir(os.path.join('Testing', 'Malicious')):
             create_row(1, os.path.join('Testing', 'Malicious', malicious_file), writer)
+            
+    with open('training.csv', 'a+') as training_csv:
+        writer = csv.writer(training_csv)
+        writer.writerow(HEADER)
+        #benign
+        for benign_file in os.listdir(os.path.join('Training', 'Benign')):
+            create_row(0, os.path.join('Training', 'Benign', benign_file), writer)
+        #now malicious
+        for malicious_file in os.listdir(os.path.join('Training', 'Malicious')):
+            create_row(1, os.path.join('Training', 'Malicious', malicious_file), writer)
     
+    return "Succesfully Completed"
     
 if __name__ == "__main__":
-    # print(os.getcwd())
+    
+    # DATA_PATH = Path("../data")
+    # if not os.path.exists(DATA_PATH):
+    #     os.mkdir(DATA_PATH)
+    
     BENIGN: str = "Benign"
     MALICIOUS: str = "Malicious"
     
-    benign_extract = extract_tar_file(MALICIOUS)
-    print(benign_extract)
-    # # malicious_extract = extract_tar_file(MALICIOUS)
+    # benign_extract = extract_tar_file(BENIGN)
+    # print(benign_extract)
+    # malicious_extract = extract_tar_file(MALICIOUS)
+    # print(malicious_extract)
     
-    benign_zip_extract = zip_extract(MALICIOUS)
-    print(benign_zip_extract)
+    # benign_zip_extract = zip_extract(BENIGN)
+    # print(benign_zip_extract)
+    # malicious_zip_extract = zip_extract(MALICIOUS)
+    # print(malicious_zip_extract)
     
-    split_benign = spliting_data(source_folder = MALICIOUS, split_ratio=0.8)
-    print(split_benign)
+    # split_benign = spliting_data(source_folder = BENIGN, split_ratio=0.8)
+    # print(split_benign)
+    # split_malicious = spliting_data(source_folder = MALICIOUS, split_ratio=0.8)
+    # print(split_malicious)
+    
+    
