@@ -1,5 +1,4 @@
 from __future__ import annotations, print_function
-import streamlit
 from streamlit import secrets
 from abc import ABC, abstractmethod
 from typing import List, Protocol
@@ -11,6 +10,8 @@ from supabase import (
     SupabaseStorageClient
 )
 
+
+# *THIS MODULAR PROGRAMMING CAN BE USED FOR INTEGRATION IN FUTURE
 
 class SupabaseConnection(ABC):
     def __init__(self):

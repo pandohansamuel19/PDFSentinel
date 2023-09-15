@@ -9,7 +9,8 @@ from pandas import DataFrame, Series
 import tensorflow as tf
 from tensorflow.python.keras.utils.vis_utils import plot_model
 
-from .data_tranformations import MalwarePDFDataset
+
+# *THIS MODULAR PROGRAMMING CAN BE USED FOR INTEGRATION IN FUTURE
 
 
 def positional_encoding(length, depth):

@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from pathlib import Path
 from typing import List, Dict
 from dataclasses import dataclass
@@ -11,9 +12,9 @@ import streamlit as st
 import pandas as pd
 from pandas import DataFrame, Series
 
-from service.custom_model import Transformer
+# from service.custom_model import Transformer
 from service.supabase_conn import SupabaseConnection, UserDB
-from service.data_tranformations import MalwarePDFDataset
+from service.data_tranformations import DataTransformations
 
 # Page Config
 st.set_page_config(
@@ -24,12 +25,20 @@ st.set_page_config(
 )
 
 @dataclass
-class MaliciousFileStatus:
-    BENIGN = "Benign"
-    MALICIOUS = "Malicious"
+class GlobalData:
+    HEADER = ['id', 'label', 'name','contents']
+    PPATH = os.getcwd()
+    DPATH = Path(f'{PPATH}/data/')
+    
+    @classmethod
+    def get_benign(cls) -> Dict:
+        return {"name": "Benign", "type": 0}
 
-@st.cache_data
-def pdf_loader(files: Path) -> BytesIO:
+    @classmethod
+    def get_malicious(cls) -> Dict:
+        return {"name": "Malicious", "type": 1}
+
+def pdf_loader(files: str) -> BytesIO:
     """_summary_
 
     Parameters
@@ -44,7 +53,7 @@ def pdf_loader(files: Path) -> BytesIO:
     """
     ...
 
-def model_consumption(model, suspected_pdf) -> List[str]:
+def model_consumption(model_type: str, content_data: str) -> List[str]:
     """Listening saved model from database and consume for predictions
 
     Returns
@@ -56,7 +65,7 @@ def model_consumption(model, suspected_pdf) -> List[str]:
     ...
     
 def send_interations_data(
-    id: UUID, initial_date: str, files_name: str, pdf_status: MaliciousFileStatus 
+    id: UUID, initial_date: str, files_name: str, pdf_status: GlobalData 
     ) -> str:
     """Will send generated data from user interactions to database
     """
@@ -64,24 +73,78 @@ def send_interations_data(
 
 
 def main() -> None:
-    st.title("😈 tf_transformers_malicious_pdf")
-    st.markdown("This how we can detect the PDF are `Benign` or `Malicious` with Transformers Encoders implementations with TensorFlow")
-    
     columns_1, columns_2 = st.columns(2)
     pdf_status = []
-    with columns_1:
+    
+    st.title("😈 tf_transformers_malicious_pdf")
+    st.markdown("This how we can detect the PDF are `Benign` or `Malicious` with Transformers Encoders implementations with TensorFlow")
+    st.markdown("## Upload and Detect")
+    with st.expander("Choose your way to upload the Suspected PDF file"):
+        file_upload, link_upload = st.tabs(["Upload PDF Here", "Upload PDF Link"])
+        
         # TODO: user can uploading the suspected pdf here
-        uploaded_file = st.file_uploader("Choose the suspecting PDF files", type="pdf")
-        if uploaded_file is not None:
-            if uploaded_file.type == "application/pdf":
-                pass
+        with file_upload:
+            uploaded_file = st.file_uploader("Choose the suspecting PDF files", type="pdf")
+            if uploaded_file is not None:
+                if uploaded_file.type == "application/pdf":
+                    return
                 
+            st.button("Detect", type = "primary", key = 1)
+            if st.button:
+                decision = "Benign"
+                # with st.spinner('Wait for it...'):
+                #     time.sleep(5)
+                if decision == "Benign":
+                    st.success('THIS PDF FILE ARE BENIGN', icon="✅")
+                elif decision == "Malicious":
+                    st.error('THIS PDF FILE ARE MALICIOUS', icon="🚨")
+                
+        with link_upload:
+            # Store the initial value of widgets in session state
+            # st.text_input(
+            #     "Placeholder for the other text input widget",
+            #     "This is a placeholder",
+            #     key="placeholder",
+            # )
+            
+            # if "visibility" not in st.session_state:
+            #     st.session_state.visibility = "visible"
+            #     st.session_state.disabled = False
+                
+            
+            text_input = st.text_input(
+                "Enter some text 👇",
+                # label_visibility=st.session_state.visibility,
+                # disabled=st.session_state.disabled,
+                # placeholder=st.session_state.placeholder,
+            )
+
+            if text_input:
+                # TODO: Processing the PDF and Detect the Suspected File
+                pdf_extractions = pdf_loader(text_input) 
+                return
+            
+            st.button("Detect", type = "primary", key = 2)
+            if st.button:
+                decision = "Benign"
+                # with st.spinner('Wait for it...'):
+                #     time.sleep(5)
+                if decision == "Benign":
+                    st.success('THIS PDF FILE ARE BENIGN', icon="✅")
+                elif decision == "Malicious":
+                    st.error('THIS PDF FILE ARE MALICIOUS', icon="🚨")
+                
+    st.markdown("## Your PDF Stats")
+    # *! This
+    # for this moment give the ui if pdf are benign or malicious
+    with st.expander("Click Here for More"):
+        number, graph = st.tabs(["Number", "Graph"])
         
-    with columns_2:
-        st.markdown("## Your PDF Status")
-        # *! This
-        # for this moment give the ui if pdf are benign or malicious
+        with number:
+            st.markdown("#### This is number's data that generated based on Detection and Analytics from your PDF file")
         
+        with graph:
+            st.markdown("#### This is some graph reporting from your PDF file")
 
 if __name__ == '__main__':
     main()

@@ -5,38 +5,61 @@ import tarfile
 import zipfile
 import shutil
 import csv
-from typing import Dict, List
+from typing import List
 from dataclasses import dataclass
 from pathlib import Path
 from pandas import DataFrame
+import google.auth
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseDownload
 
 # *THIS MODULAR PROGRAMMING CAN BE USED FOR INTEGRATION IN FUTURE
 
-@dataclass
-class GlobalData:
-    HEADER = ['id', 'label', 'name','contents']
-    PARENT_PATH = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-    # BENIGN: Dict = {"name": "Benign", "type": 0}
-    # MALICIOUS: Dict = {"name": "Malicious", "type": 1}
-    
-    @classmethod
-    def get_benign(cls) -> Dict:
-        return {"name": "Benign", "type": 0}
-
-    @classmethod
-    def get_malicious(cls) -> Dict:
-        return {"name": "Malicious", "type": 1}
         
 class DataTransformations:
-    def __init__(self, pdf_type: str, ftype: int, split_ratio = 0.8) -> DataFrame:
+    def __init__(
+        self, 
+        curr_path: str,
+        header: List,
+        pdf_type: str,
+        ftype: int,
+        split_ratio = 0.8
+    ) -> DataFrame:
+        """The customize data transformations based on dataset pattern
+
+        Parameters
+        ----------
+        curr_path : str
+            _description_
+        header : List
+            _description_
+        pdf_type : str
+            _description_
+        ftype : int
+            _description_
+        split_ratio : float, optional
+            _description_, by default 0.8
+
+        Returns
+        -------
+        DataFrame
+            _description_
+        """
         super(DataTransformations, self).__init__()
+        self.curr_path = curr_path
+        self.header = header
         self.pdf_type = pdf_type
         self.ftype = ftype
         self.split_ratio = split_ratio
+        self.id_counter = 0
         self.update = []
         
     def __str__(self) -> str:
         return "\n".join(self.update)
+    
+    def download_latest_data(self) -> None:
+        ...
 
     def extract_tar_file(self) -> str:
         """_summary_
@@ -47,7 +70,7 @@ class DataTransformations:
             _description_
         """
         
-        dpath = Path(f"{GlobalData.PARENT_PATH}/data")
+        dpath = Path(f"{self.curr_path}/data")
         if not dpath.is_dir():
             os.makedirs(dpath, exist_ok=True)
         
@@ -60,13 +83,13 @@ class DataTransformations:
             # TODO: Extracting .tar.gz from DATA_PATH
             file = tarfile.open(tar_path)
             # Extracting to this colab directory
-            file.extractall(GlobalData.PARENT_PATH / "data")
+            file.extractall(self.curr_path / "data")
             file.close()
             os.remove(tar_path)
 
             # TODO: After extraction, rename the zip folder sequentially
             # Temporary for this colab directory
-            extracted_path = Path(os.path.join(GlobalData.PARENT_PATH, f"data/{self.pdf_type}"))
+            extracted_path = Path(os.path.join(self.curr_path, f"data/{self.pdf_type}"))
             index = 1
             for filename in os.listdir(extracted_path):
                 old_path = os.path.join(extracted_path / filename)
@@ -92,7 +115,7 @@ class DataTransformations:
         """
         
         # initialize folder path
-        fpath = Path(f"{GlobalData.PARENT_PATH}/{self.pdf_type}")
+        fpath = Path(f"{self.curr_path}/data/{self.pdf_type}")
         
         try:
             # TODO: Extract the Benign PDF files
@@ -139,7 +162,7 @@ class DataTransformations:
             _description_
         """
         
-        fpath = Path(f"{GlobalData.PARENT_PATH}/{self.pdf_type}")
+        fpath = Path(f"{self.curr_path}/data/{self.pdf_type}")
 
         train_dir = Path(fpath / 'train')
         test_dir = Path(fpath / 'test')
@@ -223,17 +246,16 @@ class DataTransformations:
         writer : _type_
             _description_
         """
-        ID = 0
         file_data = []
-        file_data.append(id)
+        file_data.append(self.id_counter)
         file_data.append(filetype)
         file_data.append(os.path.basename(os.path.normpath(file)))
         bytecode = self.get_file_byte_string(file)
         file_data.append(bytecode)
         writer.writerow(file_data)
         file_data.clear()
-        ID += 1
-            
+        self.id_counter += 1
+               
         
     def csv_generator(self) -> None:
         """_summary_
@@ -249,12 +271,12 @@ class DataTransformations:
             _description_
         """
         
-        fpath = Path(f"{GlobalData.PARENT_PATH}/data/{self.pdf_type}")
+        fpath = Path(f"{self.curr_path}/data/{self.pdf_type}")
         
         with open('testing.csv', 'a+') as testing_csv:
             writer = csv.writer(testing_csv)
             
-            writer.writerow(GlobalData.HEADER)
+            writer.writerow(self.header)
             
             for files in os.listdir(os.path.join(fpath, 'test')):
                 
@@ -263,16 +285,8 @@ class DataTransformations:
                 
         with open('training.csv', 'a+') as training_csv:
             writer = csv.writer(training_csv)
-            writer.writerow(GlobalData.HEADER)
-            #benign
-            for benign_file in os.listdir(os.path.join(fpath, 'train')):
-                self.create_row(self.ftype, os.path.join(fpath, 'train', benign_file), writer)
+            writer.writerow(self.header)
+            for files in os.listdir(os.path.join(fpath, 'train')):
+                self.create_row(self.ftype, os.path.join(fpath, 'train', files), writer)
         
         return "Succesfully Completed"
-    
-
-benign_data_transformation = DataTransformations(
-    GlobalData.get_benign()["name"],
-    GlobalData.get_benign()["type"]
-)
-print(benign_data_transformation.csv_generator())
