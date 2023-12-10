@@ -12,67 +12,27 @@ import streamlit as st
 import pandas as pd
 from pandas import DataFrame, Series
 
-from tools.backend.database.supabase_conn import SupabaseConnection, UserDB
-from tools.pages import about, flow_control, history, paper_resources, welcome
-from tools.pdf_transform.pdf_transform import DataTransformations
+from tools.backend.database.connect import SupabaseConnection, UserDB
+from tools.pages import about, flow_control, history_page, paper_resources
+from tools.backend.components.pdf.extractions import GlobalData, pdf_loader
+from tools.backend.components.pdf.transforms import DataTransformations
 
 # Page Config
 st.set_page_config(
-    page_title="tf_transformers_malicious_pdf",
+    page_title="Home ● tf-facial-pdf-security",
     page_icon="💻",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 
-@dataclass
-class GlobalData:
-    HEADER = ['id', 'label', 'name', 'contents']
-    PPATH = os.getcwd()
-    DPATH = Path(f'{PPATH}/data/')
-
-    @classmethod
-    def get_benign(cls) -> Dict:
-        return {"name": "Benign", "type": 0}
-
-    @classmethod
-    def get_malicious(cls) -> Dict:
-        return {"name": "Malicious", "type": 1}
-
-
-def pdf_loader(files: str) -> BytesIO:
-    """_summary_
-
-    Parameters
-    ----------
-    files : Path
-        The files sources from st.file_uploader
-
-    Returns
-    -------
-    BytesIO
-        Converting PDF file to byte stream. Performing encoding with One Hot Encoding and n-grams.
-    """
-    ...
-
-
-def model_consumption(model_type: str, content_data: str) -> List[str]:
-    """Listening saved model from database and consume for predictions
-
-    Returns
-    -------
-    List[str]
-        Will return Benign or Malicious
-    """
-
-    ...
-
-
 def send_interations_data(
-    id: UUID, initial_date: str, files_name: str, pdf_status: GlobalData
+    id: UUID,
+    initial_date: str,
+    files_name: str,
+    pdf_status: GlobalData
 ) -> str:
-    """Will send generated data from user interactions to database
-    """
+    """Will send generated data from user interactions to database"""
     ...
 
 
