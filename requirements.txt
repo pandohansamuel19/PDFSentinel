@@ -4,3 +4,4 @@ pandas
 numpy
 PyPDF2
 firebase-admin
+jupyterlab
