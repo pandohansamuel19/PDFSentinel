@@ -85,11 +85,13 @@ class DataTransformations:
 
             # TODO: After extraction, rename the zip folder sequentially
             # Temporary for this colab directory
-            extracted_path = Path(os.path.join(self.curr_path, f"data/{self.pdf_type}"))
+            extracted_path = Path(os.path.join(
+                self.curr_path, f"data/{self.pdf_type}"))
             index = 1
             for filename in os.listdir(extracted_path):
                 old_path = os.path.join(extracted_path / filename)
-                new_path = os.path.join(extracted_path, f"{self.pdf_type}_{index}.zip")
+                new_path = os.path.join(
+                    extracted_path, f"{self.pdf_type}_{index}.zip")
                 os.rename(old_path, new_path)
                 index += 1
             return f"Extraction {self.pdf_type}.tar.gz completed successfully"
@@ -118,7 +120,8 @@ class DataTransformations:
                 if filename.endswith(".zip"):
                     zip_file_path = fpath / filename  # Full path to the ZIP file
                     # TODO: Splitting the zip file name with its extensions as folder name
-                    sub_folder = fpath / os.path.splitext(os.path.basename(filename))[0]
+                    sub_folder = fpath / \
+                        os.path.splitext(os.path.basename(filename))[0]
                     if not sub_folder.is_dir():
                         try:
                             # TODO: Extract all the pdf files and move to initialized folder
@@ -138,8 +141,7 @@ class DataTransformations:
                                     raise
 
             length_dir = len(os.listdir(fpath))
-            message = f"The {
-                self.pdf_type} zip files successfully extracted. The length of directories: {length_dir}"
+            message = f"The {self.pdf_type} zip files successfully extracted. The length of directories: {length_dir}"
             return message
 
         except Exception as e:
@@ -200,7 +202,8 @@ class DataTransformations:
                         dst_file_path = os.path.join(test_dir, file)
                         shutil.move(src_file_path, dst_file_path)
 
-                shutil.rmtree(folder_path)  # Remove the source folder after splitting
+                # Remove the source folder after splitting
+                shutil.rmtree(folder_path)
             return f"Splitting {self.pdf_type} is completed"
 
         except Exception as e:
@@ -225,7 +228,8 @@ class DataTransformations:
         curr_file = open(file, "rb")
         data = curr_file.read()
         data_str = str(data)
-        data_delim = ' '.join(data_str[i:i+4] for i in range(0, len(data_str), 4))
+        data_delim = ' '.join(data_str[i:i+4]
+                              for i in range(0, len(data_str), 4))
         data_bytes = bytes(data_delim, 'utf-8')
         curr_file.close()
         return data_bytes
@@ -276,12 +280,14 @@ class DataTransformations:
             for files in os.listdir(os.path.join(fpath, 'test')):
 
                 # put all this into "do_list_creation(filetype, file) function"
-                self.create_row(self.ftype, os.path.join(fpath, 'test', files), writer)
+                self.create_row(self.ftype, os.path.join(
+                    fpath, 'test', files), writer)
 
         with open('training.csv', 'a+') as training_csv:
             writer = csv.writer(training_csv)
             writer.writerow(self.header)
             for files in os.listdir(os.path.join(fpath, 'train')):
-                self.create_row(self.ftype, os.path.join(fpath, 'train', files), writer)
+                self.create_row(self.ftype, os.path.join(
+                    fpath, 'train', files), writer)
 
         return "Succesfully Completed"

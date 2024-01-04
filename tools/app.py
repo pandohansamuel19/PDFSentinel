@@ -26,12 +26,7 @@ st.set_page_config(
 )
 
 
-def send_interations_data(
-    id: UUID,
-    initial_date: str,
-    files_name: str,
-    pdf_status: GlobalData
-) -> str:
+def send_interations_data(id: UUID, initial_date: str, files_name: str, pdf_status: GlobalData) -> str:
     """Will send generated data from user interactions to database"""
     ...
 
