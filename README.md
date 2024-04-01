@@ -1,4 +1,4 @@
-# Implementation of Facial Recognition for Document Security in an Web Application
+# PDFSentinel: Fortifying Web Applications with NLP-Powered Malware Detection
 
 ## About
 
